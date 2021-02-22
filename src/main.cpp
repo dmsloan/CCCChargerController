@@ -317,11 +317,11 @@ void loop()
             client.println(".button2 {background-color: #555555;}</style></head>");
 
             // Web Page Heading
-            client.println("<body><h1>ESP32 Web Server</h1>");
+            client.println("<body><h1>IBE Charger Prototype</h1>");
             client.println("<body><h1>" + chargerNumber + "</h1>");
 
             // Display current state, and ON/OFF buttons for charger contactor
-            client.println("<p>charger contactor " + charger_state + "</p>");
+            client.println("<p>Charger is " + charger_state + "</p>");
             // If the charger_state is off, it displays the ON button
             if (charger_state == "off")
             {
