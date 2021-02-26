@@ -20,11 +20,12 @@ Uses the ESP32 touch capability on pin T5
  WEP or WPA, change the Wifi.begin() call accordingly.
 
  Circuit:
- *  LED_BUILTIN attached to pin 5 on the Wemos, pin 13 on the Feather
+ *  LED_BUILTIN attached to pin 5 on the Wemos, pin 13 on the Feather, pin GPIO16 on the TTGO with OLED and battery 
  *  Charger contactor solid state relay attached to pin 33.
  *  Stop button is attached to pin 32.
  */
 
+#include <Arduino.h>    // Arduino Framework
 #include <time.h> // ESP32 native time library, does graceful NTP server synchronization
 // removed the lib and commented this line #include <TimeLib.h> // TimeLib.h is the Arduino time library. We use it because it is better than time.h for tracking current time and reacting to it.
 
@@ -32,12 +33,49 @@ Uses the ESP32 touch capability on pin T5
 #include "WiFiInfo.h"  // stroes the SSID and PASSWORD in seperate file so it will not be uploaded to github
                        // this file can be included in a folder by the same name in the libraries folder
 #include <WiFiMulti.h> // Connect to the best AP based on a given list
-
 #include "Gsender_32.h" // supoprt for smtp mail module. This library must be placed in the library folder
-
 #include <U8x8lib.h> // for the Heltec WiFi LoRa 32 builtin OLED
+
+// For the heltec_wifi_lora_32 CLOCK 15 DATA 4 RESET 16
+// For the wemos lolin32 #define CLOCK 4 DATA 5 RESET 16
+
+// The active board is declared in platformio.ini. The defined is all caps
+// and is a combination of the framework and the board.
+// Instead of using the following definitions the pins are defined as
+// SDA_OLED, RST_OLED, and SCL_OLED, in pins_arduino.h
+// pins_arduino.h is swapped in when default_envs is set in platformio.ini. or
+// select default environment at bottom of the screen.
+
+#if defined(ARDUINO_HELTEC_WIFI_LORA_32)
+  #define OLED_CLOCK SCL_OLED              // Pins for OLED display
+  #define OLED_DATA SDA_OLED
+  #define OLED_RESET RST_OLED
+  #define LED_PIN 23 //Output pin for the WS2812B led strip. Dave recomends pin 5 but it is being used by LoRa on my board
+#elif defined(ARDUINO_LOLIN32)      // this is used by the TTGOBatteryOLED also because it uses the Lolin32 as the board type
+  #define OLED_CLOCK 4              // Pins for OLED display
+  #define OLED_DATA 5
+  #define OLED_RESET 16
+  #define LED_PIN 5 //Output pin for the WS2812B led strip.
+#elif defined(ARDUINO_POCKET_32)      // this is used by the TTGOBatteryOLED also because it uses the Lolin32 as the board type
+  #define OLED_CLOCK 4              // Pins for OLED display
+  #define OLED_DATA 5
+  #define OLED_RESET
+  #define LED_PIN 5 //Output pin for the WS2812B led strip.
+#elif defined(ARDUINO_TTGOBATTERYOLED)
+  #define OLED_CLOCK 4              // Pins for OLED display
+  #define OLED_DATA 5
+  #define OLED_RESET
+  #define LED_PIN 5 //Output pin for the WS2812B led strip.
+#else
+  #define OLED_CLOCK 4              // Pins for OLED display
+  #define OLED_DATA 5
+  #define OLED_RESET 16
+  #define LED_PIN 5 //Output pin for the WS2812B led strip.
+#endif
+
 // the OLED used
-U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/15, /* data=*/4, /* reset=*/16); //! this needs to be changed to enable Hardware I2C
+//U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/15, /* data=*/4, /* reset=*/16); //! this needs to be changed to enable Hardware I2C
+U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/4, /* data=*/5, /* reset=*/16); //! For the TTGO with OLED and battery
 
 WiFiMulti wifiMulti; // create and instance of WiFiMulti called wifiMulti
 
@@ -62,6 +100,7 @@ String charger_state = "off"; // set state for the chargerContactor
 String chargerNumber = "Charger 1";         // using a constant String
 String sketchName = "CCCChargerController"; // set the sketch name
 const int led = LED_BUILTIN;                //LED on pin 5 for the Wemos, pin 13 on the Feather.
+//const int led = 16;                //LED on pin 5 for the Wemos, pin 13 on the Feather.
 const int chargerContactor = 33;            // Solid state relay for the charger contactor is connected to this ping
 const int stopButton = 32;                 // stop button connected to this pin
 
