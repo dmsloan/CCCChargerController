@@ -25,22 +25,23 @@ Uses the ESP32 touch capability on pin T5
  *  Stop button is attached to pin 32.
  */
 
-#include <Arduino.h>    // Arduino Framework
-#include <time.h> // ESP32 native time library, does graceful NTP server synchronization
-// removed the lib and commented this line #include <TimeLib.h> // TimeLib.h is the Arduino time library. We use it because it is better than time.h for tracking current time and reacting to it.
+#include <Arduino.h>  // Arduino Framework
+#include <time.h>     // ESP32 native time library, does graceful NTP server synchronization
+                      // removed the lib and commented this line #include <TimeLib.h> 
+                      // TimeLib.h is the Arduino time library. We use it because it is better than time.h for tracking current time and reacting to it.
 
-#include <WiFi.h>
-#include "WiFiInfo.h"  // stroes the SSID and PASSWORD in seperate file so it will not be uploaded to github
-                       // this file can be included in a folder by the same name in the libraries folder
-#include <WiFiMulti.h> // Connect to the best AP based on a given list
+#include <WiFi.h>       // esp32 Wifi support.
+#include "WiFiInfo.h"   // stroes the SSID and PASSWORD in seperate file so it will not be uploaded to github
+                        // this file can be included in a folder by the same name in the libraries folder
+#include <WiFiMulti.h>  // Connect to the best AP based on a given list
 #include "Gsender_32.h" // supoprt for smtp mail module. This library must be placed in the library folder
-#include <U8x8lib.h> // for the Heltec WiFi LoRa 32 builtin OLED
+#include <U8x8lib.h>    // for the OLED
 
 // For the heltec_wifi_lora_32 CLOCK 15 DATA 4 RESET 16
 // For the wemos lolin32 #define CLOCK 4 DATA 5 RESET 16
 
-// The active board is declared in platformio.ini. The defined is all caps
-// and is a combination of the framework and the board.
+// The active board is declared in platformio.ini. The defined is 
+// located in .vscode/c_cpp_properties.json.
 // Instead of using the following definitions the pins are defined as
 // SDA_OLED, RST_OLED, and SCL_OLED, in pins_arduino.h
 // pins_arduino.h is swapped in when default_envs is set in platformio.ini. or
@@ -50,22 +51,14 @@ Uses the ESP32 touch capability on pin T5
   #define OLED_CLOCK SCL_OLED              // Pins for OLED display
   #define OLED_DATA SDA_OLED
   #define OLED_RESET RST_OLED
-  #define LED_PIN 23 //Output pin for the WS2812B led strip. Dave recomends pin 5 but it is being used by LoRa on my board
-#elif defined(ARDUINO_LOLIN32)      // this is used by the TTGOBatteryOLED also because it uses the Lolin32 as the board type
+#elif defined(ARDUINO_LOLIN32)      // this is used by the Lolin32
   #define OLED_CLOCK 4              // Pins for OLED display
   #define OLED_DATA 5
   #define OLED_RESET 16
-  #define LED_PIN 5 //Output pin for the WS2812B led strip.
-#elif defined(ARDUINO_POCKET_32)      // this is used by the TTGOBatteryOLED also because it uses the Lolin32 as the board type
+#elif defined(ARDUINO_Pocket32)      // this is used by the TTGOBatteryOLED
   #define OLED_CLOCK 4              // Pins for OLED display
   #define OLED_DATA 5
-  #define OLED_RESET
-  #define LED_PIN 5 //Output pin for the WS2812B led strip.
-#elif defined(ARDUINO_TTGOBATTERYOLED)
-  #define OLED_CLOCK 4              // Pins for OLED display
-  #define OLED_DATA 5
-  #define OLED_RESET
-  #define LED_PIN 5 //Output pin for the WS2812B led strip.
+  #define OLED_RESET 16
 #else
   #define OLED_CLOCK 4              // Pins for OLED display
   #define OLED_DATA 5
@@ -75,9 +68,10 @@ Uses the ESP32 touch capability on pin T5
 
 // the OLED used
 //U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/15, /* data=*/4, /* reset=*/16); //! this needs to be changed to enable Hardware I2C
-U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/4, /* data=*/5, /* reset=*/16); //! For the TTGO with OLED and battery
+//U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/4, /* data=*/5, /* reset=*/16); //! For the TTGO with OLED and battery
+U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(OLED_CLOCK, OLED_DATA, OLED_RESET); // HW does not work on the TTGO
 
-WiFiMulti wifiMulti; // create and instance of WiFiMulti called wifiMulti
+WiFiMulti wifiMulti; // create and instance of WiFiMulti called wifiMulti. 
 
 boolean connectioWasAlive = true;
 
@@ -89,8 +83,7 @@ bool touch_state = false; // set state for touch sensor
 
 WiFiServer server(80); // set port for WiFiServer
 
-// Variable to store the HTTP request
-String header;
+String header; // Variable to store the HTTP request
 
 // Auxiliary variables to store the current output state
 String led_state = "off";     // set state for the built in led
@@ -202,8 +195,9 @@ void setup()
   while (!Serial);                           // wait for the serial port to initialize
 
   u8x8.begin();                              // start the builtin OLED
+  u8x8.setFlipMode(1);                       // flip the builtin OLED
   u8x8.setFont(u8x8_font_chroma48medium8_r); // set the font on the OLED
-  u8x8.drawString(0, 1, "LoRa Receiver");    // display string on the OLED
+  u8x8.print(sketchName);                    // display string on the OLED
 
   btStop();                                  // turn off the blue tooth module to save power
 
@@ -211,7 +205,7 @@ void setup()
   digitalWrite(led, HIGH);                   // turn on the LED until the WiFi is connected
   pinMode(chargerContactor, OUTPUT);         // set the chargerContactor pin mode
   digitalWrite(chargerContactor, LOW);       // turn off the the chargerContactor
-  pinMode(stopButton, INPUT);               // set the stopButton pin mode
+  pinMode(stopButton, INPUT);                // set the stopButton pin mode
 
   Serial.println();
   Serial.print("ESP32 Touch Test pin ");
